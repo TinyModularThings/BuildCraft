@@ -25,6 +25,8 @@ import buildcraft.transport.PipeTransportItems;
 import buildcraft.transport.PipeTransportPower;
 import buildcraft.transport.TileGenericPipe;
 import buildcraft.transport.TravelingItem;
+
+import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Maps;
 import java.util.HashMap;
 import net.minecraft.block.Block;
@@ -266,6 +268,7 @@ public class PipeRendererTESR extends TileEntitySpecialRenderer {
 			case POWER:
 				renderPower(pipe.pipe, x, y, z);
 				break;
+			default:
 		}
 	}
 
@@ -694,6 +697,7 @@ public class PipeRendererTESR extends TileEntitySpecialRenderer {
 		float light = pipe.container.worldObj.getLightBrightness(pipe.container.xCoord, pipe.container.yCoord, pipe.container.zCoord);
 
 		int count = 0;
+		
 		for (TravelingItem item : pipe.transport.items) {
 			if (count >= MAX_ITEMS_TO_RENDER) {
 				break;

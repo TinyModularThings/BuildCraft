@@ -16,6 +16,9 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.ForgeDirection;
 import speiger.src.api.common.world.tiles.energy.IEnergyProvider;
 import speiger.src.api.common.world.tiles.energy.IEnergySubject;
+import universalelectricity.api.energy.IEnergyContainer;
+import universalelectricity.api.energy.IEnergyInterface;
+import universalelectricity.api.net.IConnectable;
 import buildcraft.BuildCraftCore;
 import buildcraft.api.core.SafeTimeTracker;
 import buildcraft.api.gates.ITrigger;
@@ -29,7 +32,6 @@ import buildcraft.core.proxy.CoreProxy;
 import buildcraft.transport.network.PacketPowerUpdate;
 import buildcraft.transport.pipes.*;
 import cofh.api.energy.IEnergyHandler;
-import cpw.mods.fml.common.FMLLog;
 
 public class PipeTransportPower extends PipeTransport {
 
@@ -89,6 +91,15 @@ public class PipeTransportPower extends PipeTransport {
 		{
 			IEnergySubject sub = ((IEnergyProvider)tile).getEnergyProvider(side.getOpposite());
 			if(sub != null && sub.requestEnergy())
+			{
+				return true;
+			}
+		}
+		
+		if(tile instanceof IConnectable)
+		{
+			IConnectable connect = (IConnectable)tile;
+			if(connect.canConnect(side.getOpposite(), this))
 			{
 				return true;
 			}
@@ -166,7 +177,7 @@ public class PipeTransportPower extends PipeTransport {
 				int[] flag = new int[6];
 				for (int j = 0; j < 6; ++j) {
 					if (j != i && powerQuery[j] > 0)
-						if (tiles[j] instanceof TileGenericPipe || tiles[j] instanceof IPowerReceptor || tiles[j] instanceof IEnergyProvider || tiles[j] instanceof IEnergyHandler) {
+						if (tiles[j] instanceof TileGenericPipe || tiles[j] instanceof IPowerReceptor || tiles[j] instanceof IEnergyProvider || tiles[j] instanceof IEnergyHandler || tiles[j] instanceof IEnergyInterface) {
 							totalPowerQuery += powerQuery[j];
 							if(tiles[j] instanceof IEnergyProvider)
 							{
@@ -175,6 +186,10 @@ public class PipeTransportPower extends PipeTransport {
 							else if(tiles[j] instanceof IEnergyHandler && !(tiles[j] instanceof TileGenericPipe))
 							{
 								flag[j] = 2;
+							}
+							else if(tiles[j] instanceof IEnergyInterface)
+							{
+								flag[j] = 3;
 							}
 						}
 				}
@@ -200,6 +215,16 @@ public class PipeTransportPower extends PipeTransport {
 							{
 								watts = (internalPower[i] / totalPowerQuery) * powerQuery[j];
 								watts = (handler.receiveEnergy(ForgeDirection.VALID_DIRECTIONS[j].getOpposite(), (int)watts*10, false) / 10);
+								internalPower[i] -= watts;
+							}
+						}
+						else if(flag[j] == 3)
+						{
+							IEnergyInterface inter = getJouleFromSide(ForgeDirection.VALID_DIRECTIONS[j]);
+							if(inter != null)
+							{
+								watts = (internalPower[i] / totalPowerQuery) * powerQuery[j];
+								watts = inter.onReceiveEnergy(ForgeDirection.VALID_DIRECTIONS[j].getOpposite(), (long)watts, true);
 								internalPower[i] -= watts;
 							}
 						}
@@ -272,6 +297,18 @@ public class PipeTransportPower extends PipeTransport {
 					continue;
 				}
 			}
+			
+			IEnergyContainer inter = getContainerFromSide(ForgeDirection.VALID_DIRECTIONS[i]);
+			if(inter != null)
+			{
+				int requested = (int)(inter.getEnergyCapacity(ForgeDirection.VALID_DIRECTIONS[i]) - inter.getEnergy(ForgeDirection.VALID_DIRECTIONS[i]));
+				if(requested > 0)
+				{
+					requestEnergy(ForgeDirection.VALID_DIRECTIONS[i], requested);
+					continue;
+				}
+			}
+			
 
 			PowerReceiver prov = getReceiverOnSide(ForgeDirection.VALID_DIRECTIONS[i]);
 			if (prov != null) {
@@ -336,6 +373,26 @@ public class PipeTransportPower extends PipeTransport {
 	}
 
 	
+
+	private IEnergyInterface getJouleFromSide(ForgeDirection side)
+	{
+		TileEntity tile = tiles[side.ordinal()];
+		if(!(tile instanceof IEnergyInterface))
+		{
+			return null;
+		}
+		return (IEnergyInterface)tile;
+	}
+	
+	private IEnergyContainer getContainerFromSide(ForgeDirection side)
+	{
+		TileEntity tile = tiles[side.ordinal()];
+		if(!(tile instanceof IEnergyContainer))
+		{
+			return null;
+		}
+		return (IEnergyContainer)tile;
+	}
 
 	private PowerReceiver getReceiverOnSide(ForgeDirection side) {
 		TileEntity tile = tiles[side.ordinal()];

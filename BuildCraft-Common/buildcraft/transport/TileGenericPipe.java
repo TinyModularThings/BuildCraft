@@ -160,22 +160,15 @@ public class TileGenericPipe extends TileEntity implements IPowerReceptor, IFlui
 		bindPipe();
 		if (pipe != null)
 			pipe.validate();
-		
-		PipeThreadManager.instance.addPipe(this);
-	}
-	
-	
-	@Override
-	public boolean canUpdate()
-	{
-		return false;
 	}
 
 
 	public boolean initialized = false;
 
 	@Override
-	public void updateEntity() {
+	public void updateEntity() 
+	{
+		
 		if (!worldObj.isRemote) {
 			if (deletePipe)
 				worldObj.setBlockToAir(xCoord, yCoord, zCoord);
@@ -501,7 +494,6 @@ public class TileGenericPipe extends TileEntity implements IPowerReceptor, IFlui
 
 	@Override
 	public void blockRemoved(ForgeDirection from) {
-		// TODO Auto-generated method stub
 	}
 
 	public TileBuffer[] getTileCache() {

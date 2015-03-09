@@ -16,11 +16,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraftforge.common.ForgeDirection;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidContainerRegistry;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.FluidTankInfo;
-import net.minecraftforge.fluids.IFluidHandler;
+import net.minecraftforge.fluids.*;
 import buildcraft.BuildCraftCore;
 import buildcraft.BuildCraftEnergy;
 import buildcraft.api.fuels.IronEngineCoolant;
@@ -49,6 +45,7 @@ public class TileEngineIron extends TileEngineWithInventory implements IFluidHan
 	private TankManager tankManager = new TankManager();
 	private Fuel currentFuel = null;
 	public int penaltyCooling = 0;
+	public float coolingLeft = 0.0F;
 	boolean lastPowered = false;
 	private BiomeGenBase biomeCache;
 
@@ -196,41 +193,69 @@ public class TileEngineIron extends TileEngineWithInventory implements IFluidHan
 				}
 			}
 		}
-
-		if (heat > MIN_HEAT && (penaltyCooling > 0 || !isRedstonePowered)) {
-			heat -= COOLDOWN_RATE;
-			coolEngine(MIN_HEAT);
-			getEnergyStage();
-		} else if (heat > IDEAL_HEAT) {
-			coolEngine(IDEAL_HEAT);
+		if(coolingLeft > 0)
+		{
+			if (heat > MIN_HEAT && (penaltyCooling > 0 || !isRedstonePowered)) {
+				heat -= COOLDOWN_RATE;
+				coolEngine(MIN_HEAT);
+				getEnergyStage();
+			} else if (heat > IDEAL_HEAT) {
+				coolEngine(IDEAL_HEAT);
+			}
 		}
-
+		else if(coolingLeft < 0.0F)
+		{
+			coolingLeft = 0.0F;
+		}
+		else
+		{
+			tryCooling();
+		}
+		
+		
 		if (heat <= MIN_HEAT && penaltyCooling > 0)
 			penaltyCooling--;
 
 		if (heat <= MIN_HEAT)
 			heat = MIN_HEAT;
 	}
+	
+	private void tryCooling()
+	{
+		FluidStack fluid = tankCoolant.getFluid();
+		if(fluid == null)
+		{
+			return;
+		}
+		Coolant cool = IronEngineCoolant.getCoolant(fluid);
+		
+		if(cool == null)
+		{
+			return;
+		}
+		//Calculate how much He need to drain to create cooling
+		int maxCooling = Math.max(1, (int)((float)MAX_COOLANT_PER_TICK / cool.getDegreesCoolingPerMB(heat)));
+		//Here he calculate how much he drains. Before the First Math.min() with the MAX_COOLANT_PER_TICK did not exsist
+		//So it were possible that he drained 17,5 buckets out of the Tank to get the Buffer i want so i decide to limit it o 40 mB per tick.
+		//Note that was after the last post i made.
+		FluidStack result = tankCoolant.drain(Math.min(MAX_COOLANT_PER_TICK, Math.min(maxCooling, fluid.amount)), true);
+		if(result == null)
+		{
+			return;
+		}
+		coolingLeft += ((cool.getDegreesCoolingPerMB(heat) * result.amount) / this.getBiomeTempScalar());
+	}
 
 	private void coolEngine(float idealHeat) {
 		float extraHeat = heat - idealHeat;
-
-		FluidStack coolant = this.tankCoolant.getFluid();
-		if (coolant == null)
-			return;
-
-		int coolantAmount = Math.min(MAX_COOLANT_PER_TICK, coolant.amount);
-		Coolant currentCoolant = IronEngineCoolant.getCoolant(coolant);
-		if (currentCoolant != null) {
-			float cooling = currentCoolant.getDegreesCoolingPerMB(heat);
-			cooling /= getBiomeTempScalar();
-			if (coolantAmount * cooling > extraHeat) {
-				tankCoolant.drain(Math.round(extraHeat / cooling), true);
-				heat -= extraHeat;
-			} else {
-				tankCoolant.drain(coolantAmount, true);
-				heat -= coolantAmount * cooling;
-			}
+		//Here he calculates how much heat he cools down. I decided to make that he maximum can Cool
+		//40 Heat at the same time sinince it would take insane amount of time to cool something with something really cold.
+		float cooling = Math.min(Math.min(extraHeat, coolingLeft), 40F);
+		heat -= cooling;
+		coolingLeft -= cooling;
+		if(coolingLeft <= 0)
+		{
+			coolingLeft = 0.0F;
 		}
 	}
 
@@ -246,7 +271,7 @@ public class TileEngineIron extends TileEngineWithInventory implements IFluidHan
 
 		burnTime = data.getInteger("burnTime");
 		penaltyCooling = data.getInteger("penaltyCooling");
-
+		coolingLeft = data.getFloat("Left");
 	}
 
 	@Override
@@ -256,6 +281,7 @@ public class TileEngineIron extends TileEngineWithInventory implements IFluidHan
 
 		data.setInteger("burnTime", burnTime);
 		data.setInteger("penaltyCooling", penaltyCooling);
+		data.setFloat("Left", coolingLeft);
 
 	}
 

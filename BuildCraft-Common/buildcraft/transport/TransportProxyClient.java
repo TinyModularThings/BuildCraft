@@ -1,16 +1,10 @@
 package buildcraft.transport;
 
+import net.minecraftforge.client.MinecraftForgeClient;
 import buildcraft.BuildCraftTransport;
-import buildcraft.transport.render.FacadeItemRenderer;
-import buildcraft.transport.render.PipeItemRenderer;
-import buildcraft.transport.render.PipeRendererWorld;
-import buildcraft.transport.render.PlugItemRenderer;
-import buildcraft.transport.render.PipeRendererTESR;
+import buildcraft.transport.render.*;
 import cpw.mods.fml.client.registry.ClientRegistry;
 import cpw.mods.fml.client.registry.RenderingRegistry;
-import cpw.mods.fml.common.registry.TickRegistry;
-import cpw.mods.fml.relauncher.Side;
-import net.minecraftforge.client.MinecraftForgeClient;
 
 public class TransportProxyClient extends TransportProxy {
 	public final static PipeItemRenderer pipeItemRenderer = new PipeItemRenderer();
@@ -70,7 +64,6 @@ public class TransportProxyClient extends TransportProxy {
 
 		RenderingRegistry.registerBlockHandler(pipeWorldRenderer);
 		
-		TickRegistry.registerTickHandler(PipeThreadManager.instance, Side.CLIENT);
 	}
 	
 	@Override

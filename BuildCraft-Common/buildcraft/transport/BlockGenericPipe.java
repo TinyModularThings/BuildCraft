@@ -243,6 +243,7 @@ public class BlockGenericPipe extends BlockBuildCraft {
 					box = box.expand(scale, scale, scale);
 					break;
 				}
+				default:
 			}
 			return box.getOffsetBoundingBox(x, y, z);
 		}
@@ -590,6 +591,7 @@ public class BlockGenericPipe extends BlockBuildCraft {
 					return pipe.gate.getGateItem();
 				case Plug:
 					return new ItemStack(BuildCraftTransport.plugItem);
+				default:
 			}
 		}
 		return super.getPickBlock(target, world, x, y, z);
