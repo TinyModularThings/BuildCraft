@@ -123,7 +123,11 @@ public class BuildCraftCore {
 	public static BCTrigger triggerInventoryBelow25 = new TriggerInventoryLevel(TriggerInventoryLevel.TriggerType.BELOW_25);
 	public static BCTrigger triggerInventoryBelow50 = new TriggerInventoryLevel(TriggerInventoryLevel.TriggerType.BELOW_50);
 	public static BCTrigger triggerInventoryBelow75 = new TriggerInventoryLevel(TriggerInventoryLevel.TriggerType.BELOW_75);
-
+	
+	public static BCTrigger triggerInventoryContainsItem = new TriggerContainsItem();
+	public static BCTrigger[] triggerInventorySlotContainsItem = new BCTrigger[100];
+	
+	
 	public static BCAction actionRedstone = new ActionRedstoneOutput(DefaultProps.ACTION_REDSTONE);
 	public static BCAction actionOn = new ActionMachineControl(DefaultProps.ACTION_ON, Mode.On);
 	public static BCAction actionOff = new ActionMachineControl(DefaultProps.ACTION_OFF, Mode.Off);
@@ -132,6 +136,7 @@ public class BuildCraftCore {
 	public static boolean loadDefaultRecipes = true;
 	public static boolean forcePneumaticPower = true;
 	public static boolean consumeWaterSources = false;
+	public static boolean loadSlotDetection = true;
 
 	public static BptItem[] itemBptProps = new BptItem[Item.itemsList.length];
 
@@ -152,7 +157,11 @@ public class BuildCraftCore {
 			if (updateCheck.getBoolean(true)) {
 				Version.check();
 			}
-
+			
+			Property gateSlotDetection = BuildCraftCore.mainConfiguration.get(Configuration.CATEGORY_GENERAL, "Enable Slot Detection Options", true);
+			gateSlotDetection.comment = "Allow to detect Inventory Slots only. That is only ItemID Check. Meta & NBT data is not supportet";
+			loadSlotDetection = Boolean.parseBoolean(gateSlotDetection.getString());
+			
 			Property continuousCurrent = BuildCraftCore.mainConfiguration.get(Configuration.CATEGORY_GENERAL, "current.continuous",
 					DefaultProps.CURRENT_CONTINUOUS);
 			continuousCurrent.comment = "set to true for allowing machines to be driven by continuous current";
@@ -274,7 +283,10 @@ public class BuildCraftCore {
 		CoreProxy.proxy.initializeEntityRendering();
 
 		Localization.addLocalization("/lang/buildcraft/", DefaultProps.DEFAULT_LANGUAGE);
-
+		for(int i = 0;i<100;i++)
+		{
+			this.triggerInventorySlotContainsItem[i] = new TriggerInventorySlotContainsItem(i);
+		}
 	}
 
 	@EventHandler

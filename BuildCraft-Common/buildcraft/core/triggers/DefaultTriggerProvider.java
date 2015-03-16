@@ -1,18 +1,19 @@
 package buildcraft.core.triggers;
 
-import buildcraft.BuildCraftCore;
-import buildcraft.api.gates.IOverrideDefaultTriggers;
-import buildcraft.api.gates.ITrigger;
-import buildcraft.api.gates.ITriggerProvider;
-import buildcraft.api.transport.IPipe;
-import buildcraft.core.IMachine;
 import java.util.LinkedList;
+
 import net.minecraft.block.Block;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.common.ForgeDirection;
 import net.minecraftforge.fluids.FluidTankInfo;
 import net.minecraftforge.fluids.IFluidHandler;
+import buildcraft.BuildCraftCore;
+import buildcraft.api.gates.IOverrideDefaultTriggers;
+import buildcraft.api.gates.ITrigger;
+import buildcraft.api.gates.ITriggerProvider;
+import buildcraft.api.transport.IPipe;
+import buildcraft.core.IMachine;
 
 public class DefaultTriggerProvider implements ITriggerProvider {
 
@@ -32,6 +33,17 @@ public class DefaultTriggerProvider implements ITriggerProvider {
 			res.add(BuildCraftCore.triggerInventoryBelow25);
 			res.add(BuildCraftCore.triggerInventoryBelow50);
 			res.add(BuildCraftCore.triggerInventoryBelow75);
+			res.add(BuildCraftCore.triggerInventoryContainsItem);
+			if(BuildCraftCore.loadSlotDetection)
+			{
+				for(int i = 0;i<((IInventory)tile).getSizeInventory();i++)
+				{
+					if(i < 100)
+					{
+						res.add(BuildCraftCore.triggerInventorySlotContainsItem[i]);
+					}
+				}
+			}
 		}
 
 		if (tile instanceof IFluidHandler) {
